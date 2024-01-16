@@ -168,8 +168,8 @@ while True:
                         aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
                         fb, velocity_y, velocity_z,  # m/s
                         0, 0, 0,  # x, y, z acceleration
-                        0, 0,  # yaw and yaw rate
-                        desired_yaw,  # set desired yaw in rads
+                        desired_yaw, 0,  # yaw and yaw rate
+                        #desired_yaw,  # set desired yaw in rads
                     )
                     vehicle.send_mavlink(msg)
 
@@ -186,8 +186,8 @@ while True:
                         aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
                         fb, velocity_y, velocity_z,  # m/s
                         0, 0, 0,  # x, y, z acceleration
-                        0, 0,  # yaw and yaw rate
-                        desired_yaw,  # set desired yaw in rads
+                        desired_yaw, 0,  # yaw and yaw rate
+                        #desired_yaw,  # set desired yaw in rads
                     )
                     vehicle.send_mavlink(msg)
 
@@ -209,8 +209,8 @@ while True:
                         aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
                         fb, velocity_y, velocity_z,  # m/s
                         0, 0, 0,  # x, y, z acceleration
-                        0, 0,  # yaw and yaw rate
-                        desired_yaw,  # set desired yaw in rads
+                        desired_yaw, 0,  # yaw and yaw rate
+                        #desired_yaw,  # set desired yaw in rads
                     )
                     vehicle.send_mavlink(msg)
 
