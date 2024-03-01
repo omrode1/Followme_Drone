@@ -155,37 +155,40 @@ while True:
                 yaw_rate = 15  # yaw rate in terms of degree/s
                 # Your existing code for sending MAVLink messages goes here
 
-                if distance < 350:
-                    print(f"Aruco marker is very close, vehicle is adjusting yaw and moving to {aruco_lat}, {aruco_lon}, {aruco_alt}")
-                    
-                    msg = vehicle.message_factory.set_position_target_local_ned_encode(
-                         0,  # time_boot_ms (not used)
-                         0, 0,  # target system, target component
-                        mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame
-                        0b0000111111000111,  # type_mask
-                         0, 0, 0,  # x, y, z positions (not used)
-                         0, 0, 0,  # m/s
-                         0, 0, 0,  # x, y, z acceleration
-                         desired_yaw_degrees, yaw_rate,  # yaw and yaw rate
-                     )
-                    vehicle.send_mavlink(msg)
+                # Adjust the gain based on your experiment
+GAIN = 0.1
 
-                    # # Vehicle will move towards the marker location
-                    # a_location = LocationGlobalRelative(aruco_lat, aruco_lon, aruco_alt)
-                    # vehicle.simple_goto(a_location)
-                    
-                elif 350 <= distance < 370:
-                    print("Aruco marker is in correct position, vehicle will remain stationary")
+# Inside the loop
+if distance < 200:
+    print(f"Aruco marker is very close, adjusting camera orientation.")
+    
+    # Adjust the servo motor based on desired_yaw_degrees
+    
+    # Send velocity commands for smooth drone movements
+    velocity_x = GAIN * (aruco_lat - vehicle.location.global_frame.lat)
+    velocity_y = GAIN * (aruco_lon - vehicle.location.global_frame.lon)
+    velocity_z = GAIN * (aruco_alt - vehicle.location.global_relative_frame.alt)
+    
+    vehicle.simple_goto_velocity(velocity_x, velocity_y, velocity_z)
 
-                elif distance >= 370:
-                    print(f"Aruco marker is very far, vehicle is adjusting yaw and moving forward to {aruco_lat}, {aruco_lon}, {aruco_alt}")
-                   
-                    # Vehicle will move towards the marker location
-                    a_location = LocationGlobalRelative(aruco_lat, aruco_lon, aruco_alt)
-                    vehicle.simple_goto(a_location)                    
-                   
-                    # Introduce a delay for 1 second to allow the vehicle to reach the marker
-                    time.sleep(1)
+elif 200 <= distance < 210:
+    print("Aruco marker is in correct position, vehicle will remain stationary")
+
+elif distance >= 210:
+    print(f"Aruco marker is very far, vehicle is moving forward to {aruco_lat}, {aruco_lon}, {aruco_alt}")
+    
+    # Adjust the servo motor based on desired_yaw_degrees
+    
+    # Send velocity commands for smooth drone movements
+    velocity_x = GAIN * (aruco_lat - vehicle.location.global_frame.lat)
+    velocity_y = GAIN * (aruco_lon - vehicle.location.global_frame.lon)
+    velocity_z = GAIN * (aruco_alt - vehicle.location.global_relative_frame.alt)
+    
+    vehicle.simple_goto_velocity(velocity_x, velocity_y, velocity_z)
+
+    # Introduce a delay for 1 second to allow the vehicle to reach the marker
+    time.sleep(1)
+
 
                 point = cv2.drawFrameAxes(frame, mtx, dist, rVec[i], tVec[i], 4, 4)
                 cv2.putText(
