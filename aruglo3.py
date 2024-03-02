@@ -8,7 +8,10 @@ import argparse
 import time
 from dronekit import LocationGlobalRelative
 
-
+#all the functions and variables are defined in this file
+velocity_x = 0
+velocity_y = 0
+duration = 0
 
 # Function to transform local coordinates to camera frame
 def transform_to_camera_frame(tVec, rVec, local_coordinates):
@@ -54,10 +57,40 @@ def calculate_angle(tVec):
     print("Theta: ", np.degrees(theta))
     return np.degrees(theta) #angle in degrees
 
-#function to calculate the intended travel distance of the vehicle
-def calculate_travel_distance(distance, theta):
-    travel_distance = distance * np.cos(theta)
-    return travel_distance
+#function to calculate the intended travel distance of the vehicle in y direction
+def calculate_travel_distance_y(distance, angle):
+    travel_distance_y = distance * np.sin(angle)
+    print("Travel Distance Y: ", travel_distance_y)
+    return travel_distance_y
+
+#function to calculate the intended travel distance of the vehicle in x direction
+def calculate_travel_distance_x(distance, angle):
+    travel_distance_x = distance * np.cos(angle)
+    print("Travel Distance X: ", travel_distance_x)
+    return travel_distance_x
+
+#function to calculate the time required to travel the intended distance
+def calculate_time(travel_distance_x, travel_distance_y, velocity):
+    velocity = 2 #velocity should be 2 m/s at max to avoid overshooting the target
+    time_x = travel_distance_x / velocity
+    time_y = travel_distance_y / velocity
+    print("Time: ", time_x, time_y)
+    return time_x
+
+#function to calculate the the travel velocity in y direction (velocity should be 2 m/s at max to avoid overshooting the target)
+def calculate_velocity_y(travel_distance_y, time_y):
+    velocity_y = travel_distance_y / time_y
+    print("Velocity Y: ", velocity_y)
+    velocity_y = np.clip(velocity_y, -2, 2)
+    return velocity_y
+
+#function to calculate the the travel velocity in x direction (velocity should be 2 m/s at max to avoid overshooting the target)
+def calculate_velocity_x(travel_distance_x, time_x):
+    velocity_x = travel_distance_x / time_x
+    print("Velocity X: ", velocity_x)
+    velocity_x = np.clip(velocity_x, -2, 2)
+    return velocity_x
+
 
 #function to get camera gps location
 def get_camera_gps():
@@ -72,6 +105,19 @@ def calculate_aruco_gps(tVec, camera_gps, i):
     aruco_lon = camera_gps[1] + tVec[i][0][1] * 1e-7
     aruco_alt = camera_gps[2] + tVec[i][0][2]
     return aruco_lat, aruco_lon, aruco_alt
+
+
+# Function to send global velocity
+def send_global_velocity(velocity_x, velocity_y, velocity_z, duration):
+    msg = vehicle.message_factory.set_position_target_local_ned_encode(
+        0, 0, 0,
+        mavutil.mavlink.MAV_FRAME_LOCAL_NED,
+        0b0000111111000111, 0, 0, 0,
+        velocity_x, velocity_y, velocity_z,
+        0, 0, 0, 0, 0)
+    for _ in range(duration):
+        vehicle.send_mavlink(msg)
+        time.sleep(1)
 
 # Function to arm and takeoff
 def arm_and_takeoff(aTargetAltitude):
@@ -156,39 +202,26 @@ while True:
                 # Your existing code for sending MAVLink messages goes here
 
                 # Adjust the gain based on your experiment
-GAIN = 0.1
+                GAIN = 0.1
+                velocity_z = 0
 
-# Inside the loop
-if distance < 200:
-    print(f"Aruco marker is very close, adjusting camera orientation.")
-    
-    # Adjust the servo motor based on desired_yaw_degrees
-    
-    # Send velocity commands for smooth drone movements
-    velocity_x = GAIN * (aruco_lat - vehicle.location.global_frame.lat)
-    velocity_y = GAIN * (aruco_lon - vehicle.location.global_frame.lon)
-    velocity_z = GAIN * (aruco_alt - vehicle.location.global_relative_frame.alt)
-    
-    vehicle.simple_goto_velocity(velocity_x, velocity_y, velocity_z)
+                # Inside the loop
+                if distance < 200:
+                    print(f"Aruco marker is very close, adjusting camera orientation.")
 
-elif 200 <= distance < 210:
-    print("Aruco marker is in correct position, vehicle will remain stationary")
+                    # Adjust the servo motor based on desired_yaw_degrees
 
-elif distance >= 210:
-    print(f"Aruco marker is very far, vehicle is moving forward to {aruco_lat}, {aruco_lon}, {aruco_alt}")
-    
-    # Adjust the servo motor based on desired_yaw_degrees
-    
-    # Send velocity commands for smooth drone movements
-    velocity_x = GAIN * (aruco_lat - vehicle.location.global_frame.lat)
-    velocity_y = GAIN * (aruco_lon - vehicle.location.global_frame.lon)
-    velocity_z = GAIN * (aruco_alt - vehicle.location.global_relative_frame.alt)
-    
-    vehicle.simple_goto_velocity(velocity_x, velocity_y, velocity_z)
+                    # Send velocity commands for smooth drone movements
+                    #vehicle.simple_goto_velocity(velocity_x, velocity_y, velocity_z)
 
-    # Introduce a delay for 1 second to allow the vehicle to reach the marker
-    time.sleep(1)
+                elif 200 <= distance < 210:
+                    print("Aruco marker is in the correct position, the vehicle will remain stationary.")
 
+                elif distance >= 210:
+                    print(f"Aruco marker is very far, the vehicle is moving forward to {aruco_lat}, {aruco_lon}, {aruco_alt}")
+
+                    # Send velocity commands for smooth drone movements
+                    send_global_velocity(velocity_x, velocity_y, velocity_z, duration)
 
                 point = cv2.drawFrameAxes(frame, mtx, dist, rVec[i], tVec[i], 4, 4)
                 cv2.putText(
