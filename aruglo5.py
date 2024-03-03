@@ -106,6 +106,21 @@ def calculate_aruco_gps(tVec, camera_gps, i):
     aruco_alt = camera_gps[2] + tVec[i][0][2]
     return aruco_lat, aruco_lon, aruco_alt
 
+# function to calculate duration of travel
+def calculate_duration(time_x, time_y, desired_total_duration):
+    
+    #calc the scaling factor to adjust the duration
+    duration_scaling_factor = desired_total_duration / max(time_x, time_y)
+
+    #apply tthe scaling factor to individual time components
+    duration_x = time_x * duration_scaling_factor
+    duration_y = time_y * duration_scaling_factor
+
+    #use the maximum of the scaled time components as the duration
+    duration = max(duration_x, duration_y)
+
+    return int(duration)
+
 
 # Function to send global velocity
 def send_global_velocity(velocity_x, velocity_y, velocity_z, duration):
@@ -202,7 +217,6 @@ while True:
                 # Your existing code for sending MAVLink messages goes here
 
                 # Adjust the gain based on your experiment
-                GAIN = 0.1
                 velocity_z = 0
 
                 # Inside the loop
