@@ -222,18 +222,20 @@ while True:
                 # Inside the loop
                 if distance < 200:
                     print(f"Aruco marker is very close, adjusting camera orientation.")
-
-                    # Adjust the servo motor based on desired_yaw_degrees
-
-                    # Send velocity commands for smooth drone movements
-                    #vehicle.simple_goto_velocity(velocity_x, velocity_y, velocity_z)
-
+                    
+                    
                 elif 200 <= distance < 210:
                     print("Aruco marker is in the correct position, the vehicle will remain stationary.")
 
                 elif distance >= 210:
-                    print(f"Aruco marker is very far, the vehicle is moving forward to {aruco_lat}, {aruco_lon}, {aruco_alt}")
+                    
+                    velocity_x = calculate_velocity_x(aruco_lat, camera_gps[0], aruco_lon, camera_gps[1], aruco_alt, camera_gps[2], tVec[i][0][0], tVec[i][0][2])
+                    velocity_y = calculate_velocity_y(aruco_lat, camera_gps[0], aruco_lon, camera_gps[1], aruco_alt, camera_gps[2], tVec[i][0][1], tVec[i][0][2])
+                    duration = calculate_duration(velocity_x, velocity_y, 5)
 
+                    #print(f"Aruco marker is very far, the vehicle is moving forward to {aruco_lat}, {aruco_lon}, {aruco_alt}")
+                    print("velocity_x",velocity_x,"velocity_y", velocity_y,"velocity_z", velocity_z,"duration", duration)
+                    
                     # Send velocity commands for smooth drone movements
                     send_global_velocity(velocity_x, velocity_y, velocity_z, duration)
 
@@ -267,7 +269,7 @@ while True:
     loop_execution_time = time.time() - loop_start_time
 
     loop_frequency = 1 / loop_execution_time
-    print(f"Loop Frequency: {loop_frequency} Hz")
+    #print(f"Loop Frequency: {loop_frequency} Hz")
 
     # Introduce a delay to control the loop rate
     loop_delay = 1 / desired_loop_frequency
