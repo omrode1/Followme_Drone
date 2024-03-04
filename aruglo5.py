@@ -229,10 +229,21 @@ while True:
 
                 elif distance >= 210:
                     
-                    velocity_x = calculate_velocity_x(aruco_lat, camera_gps[0], aruco_lon, camera_gps[1], aruco_alt, camera_gps[2], tVec[i][0][0], tVec[i][0][2])
-                    velocity_y = calculate_velocity_y(aruco_lat, camera_gps[0], aruco_lon, camera_gps[1], aruco_alt, camera_gps[2], tVec[i][0][1], tVec[i][0][2])
-                    duration = calculate_duration(velocity_x, velocity_y, 5)
+                    #calculate angle
+                    angle = calculate_angle(tVec[i])
 
+                    #calculate the travel distances in x and y directions
+                    travel_distance_x = calculate_travel_distance_x(distance, angle)
+                    travel_distance_y = calculate_travel_distance_y(distance, angle)
+
+                    #calculate the time required to travel the intended distance
+                    time_x = calculate_time(travel_distance_x, travel_distance_y, velocity_x)
+
+                    #update the velocity and duration based on the calculation
+                    velocity_x = calculate_velocity_x(travel_distance_x, time_x)
+                    velocity_y = calculate_velocity_y(travel_distance_y, time_x)
+                    duration = calculate_duration(time_x, time_x, 5)
+                    
                     #print(f"Aruco marker is very far, the vehicle is moving forward to {aruco_lat}, {aruco_lon}, {aruco_alt}")
                     print("velocity_x",velocity_x,"velocity_y", velocity_y,"velocity_z", velocity_z,"duration", duration)
                     
