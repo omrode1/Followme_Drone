@@ -18,6 +18,35 @@ calib_data_path = "/home/raspberrypi/calibration.npz"
 calib_data = np.load(calib_data_path)
 mtx, dist = calib_data["mtx"], calib_data["dist"]
 
+#function to calculate distance to travel in x y direction to reach the aruco marker
+def calculate_distance_to_travel (dist_x, dist_y, dist_z, rVec, tVec, distance, theta, theta_deg, res_dist, time, velocity_x, velocity_y):
+    distance = np.sqrt(tVec[i][0][2] ** 2 + tVec[i][0][0] ** 2 + tVec[i][0][1] ** 2)
+    #calculate angle(theta) between dist_x and and distance 
+    theta = np.arctan(tVec[i][0][0]/distance)
+    theta_deg = np.degrees(theta)
+
+    #calculate distance to travel in x direction
+    dist_x = distance * np.cos(theta_deg)
+
+    #calculate distance to travel in y direction
+    dist_y = distance * np.tan(theta_deg)
+
+    #calculate the resulant distance to travel in xy plane 
+    res_dist = np.sqrt(dist_x**2 + dist_y**2)
+
+    #time is kept constant for the vehicle to travel the distance
+    time = 5
+
+    #calculate the velocity in x direction
+    velocity_x = dist_x/time
+
+    #calculate the velocity in y direction
+    velocity_y = dist_y/time
+
+    return velocity_x, velocity_y
+
+
+
 # Initialize the PiCamera
 piCam = Picamera2()
 piCam.preview_configuration.main.size = (1280, 720)
@@ -146,11 +175,10 @@ while True:
 
                 # Your existing code for sending MAVLink messages goes here
 
-            fb = 0
             if distance < 200:             
-#                fb = (distance - 200)/100 #50
-                fb = -1.0
-                print(fb)
+#               
+                velocity_x, velocity_y = calculate_distance_to_travel(0, 0, 0, rVec, tVec, distance, 0, 0, 0, 0, 0)
+                
                 print("Aruco marker is very close ,vehicle is moving backward to ", aruco_lat, aruco_lon, aruco_alt)
                 msg = vehicle.message_factory.set_position_target_local_ned_encode(
                 0,  # time_boot_ms (not used)
@@ -158,14 +186,17 @@ while True:
                 mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame
                 0b0000111111000111,  # type_mask
                 aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
-                fb, velocity_y, velocity_z,  # m/s
+                velocity_x , velocity_y, 0,  # m/s
                 0, 0, 0,  # x, y, z acceleration
                 0, 0)
                 vehicle.send_mavlink(msg)
-#speed = 5 * (distance - 100)
-                #print(speed)
-# existing distance, remaining distance, speed, error
+
+
             if distance > 200 and distance < 210:   #50 60
+                
+                
+                velocity_x, velocity_y = calculate_distance_to_travel(0, 0, 0, rVec, tVec, distance, 0, 0, 0, 0, 0)
+
                 print("Aruco marker is in correct position, vehicle will remain stationary")
                 fb= 0
                 print(fb)
@@ -175,15 +206,14 @@ while True:
                 mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame
                 0b0000111111000111,  # type_mask
                 aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
-                fb, velocity_y, velocity_z,  # m/s
+                velocity_x, velocity_y, 0,  # m/s
                 0, 0, 0,  # x, y, z acceleration
                 0, 0)
                 vehicle.send_mavlink(msg)          
            
-            if distance > 210:    # 60            
-#                fb = (distance - 210)/100
-                fb = 1.0
-                #print(fb)
+            if distance > 210:
+                velocity_x, velocity_y = calculate_distance_to_travel(0, 0, 0, rVec, tVec, distance, 0, 0, 0, 0, 0)          
+
                 print("Aruco marker is very far ,vehicle is moving forward to ", aruco_lat, aruco_lon, aruco_alt)
                 msg = vehicle.message_factory.set_position_target_local_ned_encode(
                 0,  # time_boot_ms (not used)
@@ -191,13 +221,13 @@ while True:
                 mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame
                 0b0000111111000111,  # type_mask
                 aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
-                fb, velocity_y, velocity_z,  # m/s
+                velocity_x, velocity_y, 0,  # m/s velocity x y z
                 0, 0, 0,  # x, y, z acceleration
                 0, 0)
                 vehicle.send_mavlink(msg)
           
             else:
-                fb = 0
+               
 
                 point = cv2.drawFrameAxes(frame, mtx, dist, rVec[i], tVec[i], 4, 4)
                 cv2.putText(
