@@ -33,6 +33,10 @@ def calculate_distance_to_travel (dist_x, dist_y, dist_z, rVec, tVec, distance, 
     #calculate distance to travel in y direction
     dist_y = distance * np.tan(theta_deg)
 
+    #convert distance to meters
+    dist_x = dist_x * 0.01
+    dist_y = dist_y * 0.01
+
     #calculate the resulant distance to travel in xy plane 
     res_dist = np.sqrt(dist_x**2 + dist_y**2)
 
@@ -52,10 +56,8 @@ def calculate_distance_to_travel (dist_x, dist_y, dist_z, rVec, tVec, distance, 
     #limit the velocity to max_velocity
     velocity_x = min(velocity_x, max_velocity)
     velocity_y = min(velocity_y, max_velocity)
-    
 
     return velocity_x, velocity_y
-
 
 
 # Initialize the PiCamera
@@ -77,7 +79,7 @@ vehicle = connect(args.connect, baud=57600, wait_ready=True)
 velocity_y = 0
 velocity_z = 0
 
-MARKER_SIZE = 10  # centimeters
+MARKER_SIZE = 14.5  # centimeters
 
 marker_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 param_markers = aruco.DetectorParameters_create()
@@ -215,24 +217,28 @@ while True:
                 0, 0,  # target system, target component
                 mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame
                 0b0000111111000111,  # type_mask
-                aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
+                0, 0, 0,  # x, y, z positions (not used)
                 velocity_x, velocity_y, 0,  # m/s
                 0, 0, 0,  # x, y, z acceleration
                 0, 0)
                 vehicle.send_mavlink(msg)   
                 
-                time.sleep(1)
+                #send command to vehicle on 1 hz cycle
+                for x in range(0, time, 1):
+                    vehicle.send_mavlink(msg)
+                    time.sleep(1)
+                    
 
-                msg = vehicle.message_factory.set_position_target_local_ned_encode(
-                0,  # time_boot_ms (not used)
-                0, 0,  # target system, target component
-                mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame
-                0b0000111111000111,  # type_mask
-                aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
-                0, 0, 0,  # m/s
-                0, 0, 0,  # x, y, z acceleration
-                0, 0)
-                vehicle.send_mavlink(msg)
+                # msg = vehicle.message_factory.set_position_target_local_ned_encode(
+                # 0,  # time_boot_ms (not used)
+                # 0, 0,  # target system, target component
+                # mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame
+                # 0b0000111111000111,  # type_mask
+                # aruco_lat, aruco_lon, aruco_alt,  # x, y, z positions (not used)
+                # 0, 0, 0,  # m/s
+                # 0, 0, 0,  # x, y, z acceleration
+                # 0, 0)
+                # vehicle.send_mavlink(msg)
                 
            
             if distance > 210:
