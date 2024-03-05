@@ -1,0 +1,6 @@
+dronekit
+opencv-python
+numpy
+picamera2
+pymavlink
+atexit
